@@ -1,0 +1,13 @@
+SECRET_KEY=HerbertM@132
+DEBUG=True
+# DB_NAME=dapalert_archive
+DB_NAME=dapalert_archive_old
+DB_HOST=localhost
+# DB_HOST=176.74.18.130
+DB_USER=dapalert_admin
+DB_PORT=3306
+DB_PASS=HerbertM@132
+EMAIL_HOST=mail.dap-alertgroup.com.ng
+EMAIL_PORT=587
+EMAIL_HOST_USER=noreply@dap-alertgroup.com.ng
+EMAIL_HOST_PASSWORD=Alertgrp@132
