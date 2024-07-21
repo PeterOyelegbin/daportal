@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'navbar.html' %}
+{% include 'notification.html' %}
+<div class="container mt-4">
+    {% if user.role == 'Upload Officer' %}
+    <!-- loan upload form -->
+    <section class="loan_upload">
+        <h2>AMFB Loan Files Upload</h2>
+        <form class="mb-3" action="" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ formset.management_form }}
+            <div class="row">
+                {% for form in formset %}
+                <div class="col-md-4">
+                    <div class="form-group mb-2">
+                        {{ form.label_tag }} {{ form }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <input type="submit" class="btn btn-success form-control rounded-5" value="Upload Loan Files">
+        </form>
+
+        <!-- Automatically fill the upload_officer field with generated id respectively -->
+        <script>
+            var upload_officer = "{{ user.id }}";
+            document.getElementById("upload_officer").value = upload_officer;
+        </script>
+    </section>
+    {% else %}
+    <div class="card bg-warning">
+        <h1>WARNING!: You do not have permission to view this page.</h1>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

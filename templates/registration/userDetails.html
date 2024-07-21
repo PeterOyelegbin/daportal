@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'navbar.html' %}
+{% include 'notification.html' %}
+<div class="container mt-3 mb-3">
+    <!-- user detail -->
+    <section class="user_details">
+        {% if user.role == 'IT' %}
+        <h2>User Details</h2>
+        <table class="table table-bordered table-hover table-striped">
+            <tbody>
+                <tr>
+                    <th>Name</th>
+                    <td>{{ staff.first_name }} {{ staff.last_name }}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ staff.email }}</td>
+                </tr>
+                <tr>
+                    <th>Organization</th>
+                    <td>{{ staff.organization }}</td>
+                </tr>
+                <tr>
+                    <th>Branch</th>
+                    <td>{{ staff.branch }}</td>
+                </tr>
+                <tr>
+                    <th>Role</th>
+                    <td>{{ staff.role }}</td>
+                </tr>
+                <tr>
+                    <th>Active Status</th>
+                    <td>{{ staff.is_active }}</td>
+                </tr>
+                <tr>
+                    <th>Action</th>
+                    <td>
+                        <a class="nav-link material-symbols-outlined text-primary me-3" href="{% url 'updateUser' staff.pk %}">edit</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        {% else %}
+        <div class="fluid-container bg-warning row align-items-center" style="height: 50vh;">
+            <h2 class="text-center">WARNING!: You are not authorized to access this page!</h2>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

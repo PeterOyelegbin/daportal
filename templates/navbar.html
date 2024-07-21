@@ -1,0 +1,75 @@
+<!-- nav bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'home' %}"><img src="/static/images/AlertGrp_Logo.png" style="max-height: 50px;" alt="logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarColor01">
+            <ul class="navbar-nav me-auto">
+                <!-- Account List Nav -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Account List</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'home' %}">Alert MFB</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{% url 'ablAcctList' %}">Auto Bucks</a>
+                    </div>
+                </li>
+                
+                <!-- Loan List Nav -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Loan List</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'amfbLoanList' %}">Alert MFB</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{% url 'ablLoanList' %}">Auto Bucks</a>
+                    </div>
+                </li>
+                
+                {% if user.role == 'Upload Officer' %}
+                <!-- Account Upload Nav -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Account Upload</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'amfbAcctUpload' %}">Alert MFB</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{% url 'ablAcctUpload' %}">Auto Bucks</a>
+                    </div>
+                </li>
+
+                <!-- Loan Upload Nav -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Loan Upload</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'amfbLoanUpload' %}">Alert MFB</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{% url 'ablLoanUpload' %}">Auto Bucks</a>
+                    </div>
+                </li>
+                {% endif %}
+                
+                {% if user.role == 'IT' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Admin</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'users' %}">Users</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{% url 'createUser' %}">Create User</a>
+                    </div>
+                </li>
+                {% endif %}
+            </ul>
+            
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <label class="nav-link active">Hello! {{ user.first_name }} {{ user.last_name }}</label>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

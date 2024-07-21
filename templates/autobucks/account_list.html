@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'navbar.html' %}
+{% include 'notification.html' %}
+<div class="container mt-4 mb-3">
+    <form class="d-flex mb-3">
+        <input class="form-control me-sm-2" type="text" name="q" placeholder="Search by name or account number...">
+        <button class="btn btn-primary my-2 my-sm-0" type="submit">Search</button>
+    </form>
+    <!-- account list -->
+    <section class="account_list">
+        <h2>ABL Account List</h2>
+        <table class="table table-bordered table-hover">
+            <thead class="table-primary">
+                <tr>
+                    <th>Name</th>
+                    <th>Account Number</th>
+                    <th>Branch</th>
+                    <th>Approved</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in page_obj %}
+                    {% if user.role == 'HOP' and doc.approval_status == False %}
+                        <tr>
+                            <td>{{ doc.full_name | truncatechars:20 }}</td>
+                            <td>{{ doc.account_no }}</td>
+                            <td>{{ doc.branch }}</td>
+                            <td>{{ doc.approval_status }}</td>
+                            <td>
+                                <a class="nav-link material-symbols-outlined text-info" href="{% url 'ablAcctDetails' doc.pk %}">visibility</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        {% if doc.approval_status == True %}
+                            <tr>
+                                <td>{{ doc.full_name | truncatechars:20 }}</td>
+                                <td>{{ doc.account_no }}</td>
+                                <td>{{ doc.branch }}</td>
+                                <td>{{ doc.approval_status }}</td>
+                                <td>
+                                    <a class="nav-link material-symbols-outlined text-info" href="{% url 'ablAcctDetails' doc.pk %}">visibility</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <span class="d-flex justify-content-center">
+            {% if page_obj.has_previous %}
+                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page=1">first_page</a>
+                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page={{ page_obj.previous_page_number }}">arrow_back_ios</a>
+            {% else %}
+                <a class="btn btn-primary rounded material-symbols-outlined disabled me-3" href="">first_page</a>
+                <a class="btn btn-primary rounded material-symbols-outlined disabled me-3" href="">arrow_back_ios</a>
+            {% endif %}
+            
+            <div class="me-3">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </div>
+        
+            {% if page_obj.has_next %}
+                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page={{ page_obj.next_page_number }}">arrow_forward_ios</a>
+                <a class="btn btn-primary rounded material-symbols-outlined" href="?page={{ page_obj.paginator.num_pages }}">last_page</a>
+            {% else %}
+                <a class="btn btn-primary rounded material-symbols-outlined disabled me-3" href="">arrow_forward_ios</a>
+                <a class="btn btn-primary rounded material-symbols-outlined disabled" href="">last_page</a>
+            {% endif %}
+        </span>        
+    </section>
+</div>
+{% endblock %}

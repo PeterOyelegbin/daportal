@@ -1,0 +1,9 @@
+<!-- Notification or Alert system -->
+{% if messages %}
+<div class="text-center alert alert-dismissible alert-info mt-1">
+    {% for message in messages %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <strong>{{ message }}</strong>
+    {% endfor %}
+</div>
+{% endif %}

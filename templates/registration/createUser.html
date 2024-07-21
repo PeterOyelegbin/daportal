@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'navbar.html' %}
+{% include 'notification.html' %}
+<section class="createUsers">
+    <div class="container py-4 h-100">
+        <div class="d-flex justify-content-center">            
+            <div class="col-xl-10">
+                <div class="card rounded-3">
+                    {% if user.role == 'IT' %}
+                    <div class="row g-0">
+                        <div class="new-user col-lg-6"></div>
+                        <div class="col-lg-6">
+                            <div class="card rounded-3">
+                                <div class="card-header text-center">
+                                    <h4 class="">Create User</h4>
+                                </div>
+                                <form class="card-body" action="{% url 'createUser' %}" method="post">
+                                    {% csrf_token %}
+                                    {{ formset.management_form }}
+                                    <div class="row">
+                                        {% for form in formset %}
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                {{ form.label_tag }} {{ form }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        <input type="submit" class="btn btn-success form-control rounded-5 mt-2" value="Add User">
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="card-header bg-warning">
+                        <h1>WARNING!: You do not have permission to view this page.</h1>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- end of user creation form -->
+{% endblock %}

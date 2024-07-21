@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'navbar.html' %}
+{% include 'notification.html' %}
+<div class="container mt-4 mb-3" style="max-width: 500px;">
+    <!-- cam update form -->
+    <section class="doc_approve">
+        {% if page == 'account_opening' %}
+            <h2>Approve Account Document</h2>
+            <form class="text-center" action="" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                {% for form in formset %}
+                    <div class="form-group mb-3">
+                        {{ form.label_tag }} {{ form }}
+                        <input type="submit" class="btn btn-info form-control rounded-5 mt-3" value="Approve Account File">
+                    </div>
+                {% endfor %}
+            </form>
+        {% else %}
+            <h2>Approve Loan Files</h2>
+            <form class="text-center" action="" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                {% for form in formset %}
+                    <div class="form-group mb-3">
+                        {{ form.label_tag }} {{ form }}
+                        <input type="submit" class="btn btn-info form-control rounded-5 mt-3" value="Approve Loan File">
+                    </div>
+                {% endfor %}
+            </form>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

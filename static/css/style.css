@@ -1,0 +1,35 @@
+body {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.landing-page {
+    min-height: 80vh;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+#auth {
+    /* background-color: blueviolet; */
+    background: #444 url("https://media.istockphoto.com/id/468856268/photo/storage-room.jpg?s=612x612&w=0&k=20&c=MULAe5DGhM5lrwcp4ApziOUnTB-_OVYIuJMYvBij0mM=");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-blend-mode: overlay;
+}
+
+.nav-link {
+    color: white;
+}
+
+.account_list, .loan_list, .doc_detail, .doc_update, .listUsers {
+    overflow-y: auto;
+}
+
+.new-user {
+    background: url("https://cdn.prod.website-files.com/61845f7929f5aa517ebab941/649951e180abf3d44668e864_How%20Digital%20Onboarding%20is%20Revolutionizing%20Businesses%3F.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.trademark {
+    opacity: .08;
+  }

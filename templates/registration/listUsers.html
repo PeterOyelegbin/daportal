@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'navbar.html' %}
+{% include 'notification.html' %}
+<!-- start of users list view -->
+<div class="container mt-3 mb-3">
+    <form class="d-flex mb-3">
+        <input class="form-control me-sm-2" type="text" name="q" placeholder="Search by name...">
+        <button class="btn btn-primary my-2 my-sm-0" type="submit">Search</button>
+    </form>
+    <section class="listUsers">
+        <h2>Users List</h2>
+        <table class="table table-hover">
+            <thead class="table-primary">
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Branch</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff in staffs %}
+                    {% if staff.id == user.id %}
+                    <tr>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td>{{ staff.first_name }} {{ staff.last_name }}</td>
+                        <td>{{ staff.role }}</td>
+                        <td>{{ staff.branch }}</td>
+                        <td>
+                            <a class="nav-link material-symbols-outlined text-info" href="{% url 'userDetails' staff.pk %}">visibility</a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+<!-- end of users list view -->
+{% endblock %}

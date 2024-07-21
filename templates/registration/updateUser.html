@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'navbar.html' %}
+{% include 'notification.html' %}
+<div class="container mt-3 mb-3">
+    <!-- start of user update form -->
+    <section class="updateUser">
+        {% if user.role == 'IT' %}
+        <h2>Update User</h2>
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ formset.management_form }}
+            <div class="row">
+                {% for form in formset %}
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        {{ form.label_tag }} {{ form }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <button type="submit" class="btn btn-info form-control rounded-5 mt-2">Update User</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="fluid-container bg-warning row align-items-center" style="height: 50vh;">
+            <h2 class="text-center">You are not authorized to access this page!</h2>
+        </div>
+        {% endif %}
+    </section>
+    <!-- end of user update form -->
+</div>
+{% endblock %}
