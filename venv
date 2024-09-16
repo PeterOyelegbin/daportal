@@ -1,8 +1,8 @@
 SECRET_KEY=Herbertm@132
 DEBUG=True
 DB_NAME=dapalert_archive_old
-DB_HOST=localhost
-# DB_HOST=176.74.18.130
+# DB_HOST=localhost
+DB_HOST=176.74.18.130
 DB_USER=dapalert_admin
 DB_PORT=3306
 DB_PASS=Herbertm@132

@@ -2,9 +2,10 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib import messages
-from django.core.mail import send_mail
+# from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from accounts.models import UserModel
+from datetime import datetime
+# from accounts.models import UserModel
 from .models import AccountOpening, LoanApplication
 from .forms import AcctUploadForm, AcctApprovalForm, LoanUploadForm, LoanApprovalForm
 from managers import send_async_email
@@ -12,14 +13,52 @@ import threading
 
 
 # Create your views here.
-@login_required(redirect_field_name="login") 
+# @login_required(redirect_field_name="login") 
+# def AccountList(request):
+#     q = request.GET.get('q', '')
+#     doc_list = AccountOpening.objects.filter(Q(full_name__icontains=q) | Q(account_no__icontains=q))
+#     paginator = Paginator(doc_list, 10)
+#     page_number = request.GET.get("page")
+#     page_obj = paginator.get_page(page_number)
+#     return render(request, 'autobucks/account_list.html', {'page_obj': page_obj})
+
+@login_required(redirect_field_name="login")
 def AccountList(request):
     q = request.GET.get('q', '')
-    doc_list = AccountOpening.objects.filter(Q(full_name__icontains=q) | Q(account_no__icontains=q))
+    month = request.GET.get('month', '')
+    year = request.GET.get('year', '')
+    # Initial queryset
+    doc_list = AccountOpening.objects.all()
+    # Filter by search query
+    if q:
+        doc_list = doc_list.filter(Q(full_name__icontains=q) | Q(account_no__icontains=q))
+    # Filter by month and year
+    if month and year:
+        try:
+            start_date = datetime(int(year), int(month), 1)
+            if int(month) == 12:
+                end_date = datetime(int(year) + 1, 1, 1)
+            else:
+                end_date = datetime(int(year), int(month) + 1, 1)
+            doc_list = doc_list.filter(date_uploaded__gte=start_date, date_uploaded__lt=end_date)
+        except ValueError as e:
+            messages.error(request, f"The error '{e}' occurred while processing your request. Please try again later.")
+ 
     paginator = Paginator(doc_list, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    return render(request, 'autobucks/account_list.html', {'page_obj': page_obj})
+
+    current_year = datetime.now().year
+    years = range(2020, current_year + 1)
+
+    context = {
+        'page_obj': page_obj,
+        'years': years,
+        'q': q,
+        'month': month,
+        'year': year,
+    }
+    return render(request, 'autobucks/account_list.html', context)
 
 
 @login_required(redirect_field_name="login")
@@ -146,14 +185,52 @@ def AccountDelete(request, pk):
 
 
 # Loan view functions
-@login_required(redirect_field_name="login") 
+# @login_required(redirect_field_name="login") 
+# def LoanList(request):
+#     q = request.GET.get('q', '')
+#     doc_list = LoanApplication.objects.filter(Q(full_name__icontains=q) | Q(account_no__icontains=q))
+#     paginator = Paginator(doc_list, 10)
+#     page_number = request.GET.get("page")
+#     page_obj = paginator.get_page(page_number)
+#     return render(request, 'autobucks/loan_list.html', {'page_obj': page_obj})
+
+@login_required(redirect_field_name="login")
 def LoanList(request):
     q = request.GET.get('q', '')
-    doc_list = LoanApplication.objects.filter(Q(full_name__icontains=q) | Q(account_no__icontains=q))
+    month = request.GET.get('month', '')
+    year = request.GET.get('year', '')
+    # Initial queryset
+    doc_list = LoanApplication.objects.all()
+    # Filter by search query
+    if q:
+        doc_list = doc_list.filter(Q(full_name__icontains=q) | Q(account_no__icontains=q))
+    # Filter by month and year
+    if month and year:
+        try:
+            start_date = datetime(int(year), int(month), 1)
+            if int(month) == 12:
+                end_date = datetime(int(year) + 1, 1, 1)
+            else:
+                end_date = datetime(int(year), int(month) + 1, 1)
+            doc_list = doc_list.filter(date_uploaded__gte=start_date, date_uploaded__lt=end_date)
+        except ValueError as e:
+            messages.error(request, f"The error '{e}' occurred while processing your request. Please try again later.")
+
     paginator = Paginator(doc_list, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    return render(request, 'autobucks/loan_list.html', {'page_obj': page_obj})
+
+    current_year = datetime.now().year
+    years = range(2020, current_year + 1)
+
+    context = {
+        'page_obj': page_obj,
+        'years': years,
+        'q': q,
+        'month': month,
+        'year': year,
+    }
+    return render(request, 'autobucks/loan_list.html', context)
 
 
 @login_required(redirect_field_name="login")

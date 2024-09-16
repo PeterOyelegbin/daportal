@@ -4,7 +4,28 @@
 {% include 'notification.html' %}
 <div class="container mt-4 mb-3">
     <form class="d-flex mb-3">
-        <input class="form-control me-sm-2" type="text" name="q" placeholder="Search by name or account number...">
+        <input class="form-control me-sm-2" type="text" name="q" placeholder="Enter name or account number">
+        <select class="form-control me-sm-2" name="month">
+            <option value="">Select Month</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+        </select>
+        <select class="form-control me-sm-2" name="year">
+            <option value="">Select Year</option>
+            {% for year in years %}
+                <option value="{{ year }}">{{ year }}</option>
+            {% endfor %}
+        </select>
         <button class="btn btn-primary my-2 my-sm-0" type="submit">Search</button>
     </form>
     <!-- account list -->
@@ -50,8 +71,8 @@
         </table>
         <span class="d-flex justify-content-center">
             {% if page_obj.has_previous %}
-                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page=1">first_page</a>
-                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page={{ page_obj.previous_page_number }}">arrow_back_ios</a>
+                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page=1&q={{ q }}&month={{ month }}&year={{ year }}">first_page</a>
+                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&month={{ month }}&year={{ year }}">arrow_back_ios</a>
             {% else %}
                 <a class="btn btn-primary rounded material-symbols-outlined disabled me-3" href="">first_page</a>
                 <a class="btn btn-primary rounded material-symbols-outlined disabled me-3" href="">arrow_back_ios</a>
@@ -62,8 +83,8 @@
             </div>
         
             {% if page_obj.has_next %}
-                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page={{ page_obj.next_page_number }}">arrow_forward_ios</a>
-                <a class="btn btn-primary rounded material-symbols-outlined" href="?page={{ page_obj.paginator.num_pages }}">last_page</a>
+                <a class="btn btn-primary rounded material-symbols-outlined me-3" href="?page={{ page_obj.next_page_number }}&q={{ q }}&month={{ month }}&year={{ year }}">arrow_forward_ios</a>
+                <a class="btn btn-primary rounded material-symbols-outlined" href="?page={{ page_obj.paginator.num_pages }}&q={{ q }}&month={{ month }}&year={{ year }}">last_page</a>
             {% else %}
                 <a class="btn btn-primary rounded material-symbols-outlined disabled me-3" href="">arrow_forward_ios</a>
                 <a class="btn btn-primary rounded material-symbols-outlined disabled" href="">last_page</a>
