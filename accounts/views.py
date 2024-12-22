@@ -2,11 +2,17 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from .models import UserModel
 from .forms import UserCreationForm, UserUpdateForm
 from managers import send_async_email
-import threading
+import threading, logging
+
+
+# Get the logger
+general_logger = logging.getLogger('general_logger')
 
 
 # Create your views here.
@@ -24,18 +30,23 @@ def createUser(request):
                     messages.error(request, 'User already exists!')
                 else:
                     user = formset.save()
+                    email_subject = 'DA Portal: User Created'
+                    email_boby = f"""Dear {user.first_name} {user.last_name},\n
+                    You have been created successfully on the DA Portal of the ALERT GROUP. Your default password is {formset.cleaned_data['password']}.\n\n
+                    Kindly click forget password to change the default password.\n\n
+                    Regards,\n
+                    DA Portal\n
+                    https://dap-alertgroup.com.ng"""
+                    sender = settings.DEFAULT_FROM_EMAIL
+                    recipient = [user.email]
                     # Asynchronously handle send mail
-                    threading.Thread(target=send_async_email, args=(
-                        'DA Portal: User Created',
-                        f"""Dear {user.first_name} {user.last_name},\n\nCongratulations! You have been successfully created on the DA Portal of the ALERT GROUP. Your default password is {formset.cleaned_data['password']}. Please log in and change it.\n\nRegards,\nDA Portal\nhttps://dap-alertgroup.com.ng""",
-                        settings.EMAIL_HOST_USER,
-                        [user.email]
-                    )).start()
+                    threading.Thread(target=send_async_email, args=(email_subject, email_boby, sender, recipient)).start()
                     messages.success(request, 'User added successfully')
                     return redirect('users')
             else:
                 messages.error(request, formset.errors)
-        except Exception as e:
+        except (Exception, IntegrityError, ValidationError, ValueError) as e:
+            general_logger.error("An error occurred: %s", e)
             messages.error(request, f"Error creating user: {str(e)}")
     else:
         formset = UserCreationForm()
@@ -53,7 +64,8 @@ def loginUser(request):
                 return redirect('home')
             else:
                 messages.error(request, 'Email or password is incorrect!')
-        except Exception as e:
+        except (Exception, IntegrityError, ValidationError, ValueError) as e:
+            general_logger.error("An error occurred: %s", e)
             messages.error(request, f"Error logging in: {str(e)}")
     return render(request, 'registration/login.html')
 
@@ -63,7 +75,8 @@ def logoutUser(request):
     try:
         logout(request)
         messages.success(request, 'Logged out successfully')
-    except Exception as e:
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
         messages.error(request, f"Error logging out: {str(e)}")
     return redirect('home')
 
@@ -73,7 +86,8 @@ def listUsers(request):
     try:
         q = request.GET.get('q', '')
         users = UserModel.objects.filter(first_name__icontains=q)
-    except Exception as e:
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
         messages.error(request, f"Error fetching users: {str(e)}")
         users = []
     return render(request, 'registration/listUsers.html', {'staffs': users})
@@ -83,7 +97,11 @@ def listUsers(request):
 def userDetails(request, pk):
     try:
         user = get_object_or_404(UserModel, id=pk)
-    except Exception as e:
+    except UserModel.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('users')
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
         messages.error(request, f"User does not exist: {str(e)}")
         return redirect('users')
     return render(request, 'registration/userDetails.html', {'staff': user})
@@ -102,7 +120,11 @@ def updateUser(request, pk):
                 formset.save()
                 messages.success(request, 'User data successfully updated')
                 return redirect('user_details', pk=pk)
-    except Exception as e:
+    except UserModel.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('users')
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
         messages.error(request, f"Error updating user: {str(e)}")
         formset = UserUpdateForm(instance=user)
     return render(request, 'registration/updateUser.html', {'formset': formset})
@@ -116,6 +138,10 @@ def deleteUser(request, pk):
             user.delete()
             messages.success(request, 'User deleted successfully')
             return redirect('users')
-    except Exception as e:
+    except UserModel.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('users')
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
         messages.error(request, f"Error deleting user: {str(e)}")
     return render(request, 'registration/deleteUser.html', {'user': user})
