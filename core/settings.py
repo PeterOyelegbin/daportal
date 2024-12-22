@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
-import os
+import os, logging.config
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # 3rd-party libraries
+    "storages",
 
     # created apps
     "accounts.apps.AccountsConfig",
@@ -90,7 +93,7 @@ DATABASES = {
 
     # Remote or production db
     "default": {
-        "ENGINE": "django.db.backends.mysql",
+        "ENGINE": "mysql.connector.django",
         "NAME": config('DB_NAME'),
         "HOST": config('DB_HOST'),
         "USER": config('DB_USER'),
@@ -143,18 +146,24 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# for file uploads
-MEDIA_URL = '/uploaded_files/'
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'static/uploaded_files')
+STATICFILES_STORAGE = 'storages.backends.s3.S3Storage'
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# S3 Bucket Configuration
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = config("AWS_BUCKET_NAME")
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+
+# Default file storage configuration
+DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
 
 
 # Email settings
@@ -166,4 +175,54 @@ EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_TIMEOUT = 1200  # 1200 sec
+EMAIL_TIMEOUT = 3400  # 3400 sec
+
+
+# Logger configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file_general': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'general.log',
+            'formatter': 'verbose',
+        },
+        'file_email': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'email_errors.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file_general'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'general_logger': {
+            'handlers': ['file_general'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'email_logger': {
+            'handlers': ['file_email'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
+logging.config.dictConfig(LOGGING)

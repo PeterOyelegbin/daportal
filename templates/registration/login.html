@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 {% include 'notification.html' %}
+{% load static %}
 <section class="container">
     <div class="landing-page row d-flex justify-content-center align-items-center">
         <div class="col-xl-10">
@@ -8,7 +9,7 @@
                 <div class="row g-0">
                     <div id="auth" class="col-lg-6">
                         <div class="text-white px-4 py-3">
-                        <a href="{% url 'home' %}"><img src="/static/images/AlertGrp_Logo.png" style="width: 200px;" alt="logo"></a>
+                        <a href="{% url 'home' %}"><img src="{% static 'images/AlertGrp_Logo.png' %}" style="width: 200px;" alt="logo"></a>
                         <!-- <a href="{% url 'home' %}"><img src="/static/images/alertmfb-logo.png" style="width: 200px;" alt="logo"></a> -->
                         <h2>Document Archive Portal</h2>
                         <hr>

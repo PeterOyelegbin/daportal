@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
+import logging
 
 
 # Organization list
@@ -46,10 +47,13 @@ def zip_file_size(value):
         raise ValidationError("File too large. Size should not exceed 20mb.")
 
 
+# Get the email logger
+email_logger = logging.getLogger('email_logger')
+
 # Asynchronous email sending
 def send_async_email(subject, message, from_email, recipient_list):
     try:
         email = EmailMultiAlternatives(subject, message, from_email, recipient_list)
         email.send()
     except Exception as e:
-        print(f"Error sending email: {e}")
+        email_logger.error(f"Error sending email: {e}")

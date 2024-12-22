@@ -1,15 +1,19 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.db import IntegrityError
 from django.contrib import messages
-# from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 from datetime import datetime
-# from accounts.models import UserModel
 from .models import AccountOpening, LoanApplication
 from .forms import AcctUploadForm, AcctApprovalForm, LoanUploadForm, LoanApprovalForm
 from managers import send_async_email
-import threading
+import threading, logging
+
+
+# Get the logger
+general_logger = logging.getLogger('general_logger')
 
 
 # Create your views here.
@@ -32,8 +36,9 @@ def AccountList(request):
             else:
                 end_date = datetime(int(year), int(month) + 1, 1)
             doc_list = doc_list.filter(date_uploaded__gte=start_date, date_uploaded__lt=end_date)
-        except ValueError as e:
-            messages.error(request, f"The error '{e}' occurred while processing your request. Please try again later.")
+        except (Exception, IntegrityError, ValidationError, ValueError) as e:
+            general_logger.error("An error occurred: %s", e)
+            messages.error(request, "An error occurred while processing your request. Please try again later.")
  
     paginator = Paginator(doc_list, 10)
     page_number = request.GET.get("page")
@@ -63,20 +68,25 @@ def AccountUpload(request):
                 return redirect('home')
             supervisor = formset.cleaned_data['supervisor']
             try:
-                # Asyncronously handle send mail
-                threading.Thread(target=send_async_email, args=(
-                    'DA Portal: Account File Uploaded',
-                    f"""Dear {supervisor},\n\nI have submitted some documents for approval on the DA Portal.
-                    Kindly attend to the document as it awaits your approval by searching with '{formset.cleaned_data['full_name']}'\n\nBest regards,
-                    \n{request.user.first_name} {request.user.last_name}\n{request.user.email}\nhttps://dap-alertgroup.com.ng""",
-                    request.user.email,
-                    [supervisor.email]
-                )).start()
+                sender = request.user.email
+                email_subject = 'DA Portal: Account File Uploaded'
+                email_boby = f"""Dear {supervisor},\n
+                I have submitted some documents for approval on the DA Portal.
+                Kindly attend to the document as it awaits your approval by searching with '{formset.cleaned_data['full_name']}'\n\n
+                Regards,\n
+                {request.user.first_name} {request.user.last_name}\n
+                {sender}\n
+                https://dap-alertgroup.com.ng"""
+                recipient = [supervisor.email]
+                # Asynchronously handle send mail
+                threading.Thread(target=send_async_email, args=(email_subject, email_boby, sender, recipient)).start()
+                # Save to DB
                 formset.save()
                 messages.success(request, 'Account document uploaded successfully and awaiting approval')
                 return redirect('home')
-            except Exception as e:
-                messages.error(request, f"The error '{e}' occurred while processing your request. Please try again later.")
+            except (Exception, IntegrityError, ValidationError, ValueError) as e:
+                general_logger.error("An error occurred: %s", e)
+                messages.error(request, "An error occurred while processing your request. Please try again later.")
                 return render(request, 'alertmfb/account_upload.html', {'formset': formset})
         else:
             messages.error(request, formset.errors)
@@ -91,8 +101,9 @@ def AccountDetails(request, pk):
     except AccountOpening.DoesNotExist:
         messages.error(request, "Account document not found.")
         return redirect('home')
-    except Exception as e:
-        messages.error(request, f"The error '{e}' occurred while retrieving account document details.")
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
+        messages.error(request, "An error occurred while retrieving account document details.")
         return redirect('home')
 
 
@@ -112,19 +123,24 @@ def AccountApproval(request, pk):
                 messages.error(request, "Account document yet to be approved!")
                 return redirect('/amfb/account/approve/'+pk)
             try:
-                # Asyncronously handle send mail
-                threading.Thread(target=send_async_email, args=(
-                    'DA Portal: Account File Approved',
-                    f"""Dear {object.upload_officer.first_name},\n\nThe submitted document for '{object}' has been approved upon review.
-                    \n\nBest regards,\n{request.user.first_name} {request.user.last_name}\n{request.user.email}\nhttps://dap-alertgroup.com.ng""",
-                    request.user.email,
-                    [object.upload_officer.email]
-                )).start()
+                sender = request.user.email
+                email_subject = 'DA Portal: Account File Approved'
+                email_boby = f"""Dear {object.upload_officer.first_name},\n
+                The submitted document for '{object}' has been approved upon review.
+                Regards,\n
+                {request.user.first_name} {request.user.last_name}\n
+                {sender}\n
+                https://dap-alertgroup.com.ng"""
+                recipient = [object.upload_officer.email]
+                # Asynchronously handle send mail
+                threading.Thread(target=send_async_email, args=(email_subject, email_boby, sender, recipient)).start()
+                # Save to DB
                 formset.save()
                 messages.success(request, 'Account document successfully approved')
                 return redirect('home')
-            except Exception as e:
-                messages.error(request, f"The error '{e}' occurred while processing the account document for approval")
+            except (Exception, IntegrityError, ValidationError, ValueError) as e:
+                general_logger.error("An error occurred: %s", e)
+                messages.error(request, "An error occurred while processing the account document for approval")
                 return redirect('/amfb/account/approve/'+pk)
         else:
             messages.error(request, formset.errors)
@@ -138,22 +154,29 @@ def AccountRejection(request, pk):
         return redirect('home')
     try:
         object = get_object_or_404(AccountOpening, id=pk)
-        # Asyncronously handle send mail
-        threading.Thread(target=send_async_email, args=(
-            'DA Portal: Account File Rejected',
-            f"""Dear {object.upload_officer.first_name},\n\nThe submitted document for '{object}' has been rejected upon review.
-            Kindly contact your supervisor/review officer for necessary details that needs to be corrected before reuploading.\n\nBest regards,
-            \n{request.user.first_name} {request.user.last_name}\n{request.user.email}\nhttps://dap-alertgroup.com.ng""",
-            request.user.email,
-            [object.upload_officer.email]
-        )).start()
+        sender = request.user.email
+        email_subject = 'DA Portal: Account File Rejected'
+        email_boby = f"""Dear {object.upload_officer.first_name},\n
+        The submitted document for '{object}' has been rejected upon review.
+        Kindly contact your supervisor/review officer for necessary details that needs to be corrected before reuploading.
+        Regards,\n
+        {request.user.first_name} {request.user.last_name}\n
+        {sender}\n
+        https://dap-alertgroup.com.ng"""
+        recipient = [object.upload_officer.email]
+        # Asynchronously handle send mail
+        threading.Thread(target=send_async_email, args=(email_subject, email_boby, sender, recipient)).start()
         # Delete associated files and db record
         object.account_file.delete()
         object.delete()
         messages.success(request, 'Account document rejected!')
         return redirect('home')
-    except Exception as e:
-        messages.error(request, f"The error '{e}' occurred while processing the account document for rejection. Please contact support.")
+    except AccountOpening.DoesNotExist:
+        messages.error(request, "Account document not found.")
+        return redirect('home')
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
+        messages.error(request, "An error occurred while processing the account document for rejection. Please contact support.")
         return redirect('/amfb/account/details/'+pk)
 
 
@@ -170,8 +193,9 @@ def AccountDelete(request, pk):
         messages.success(request, 'Account document delete successfully!')
     except AccountOpening.DoesNotExist:
         messages.error(request, 'Account document not found')
-    except Exception as e:
-        messages.error(request, f"The error '{e}' occurred while deleting the account document")
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
+        messages.error(request, "An error occurred while deleting the account document")
         return redirect('home')
 
 
@@ -195,8 +219,9 @@ def LoanList(request):
             else:
                 end_date = datetime(int(year), int(month) + 1, 1)
             doc_list = doc_list.filter(date_uploaded__gte=start_date, date_uploaded__lt=end_date)
-        except ValueError as e:
-            messages.error(request, f"The error '{e}' occurred while processing your request. Please try again later.")
+        except (Exception, IntegrityError, ValidationError, ValueError) as e:
+            general_logger.error("An error occurred: %s", e)
+            messages.error(request, "An error occurred while processing your request. Please try again later.")
 
     paginator = Paginator(doc_list, 10)
     page_number = request.GET.get("page")
@@ -226,20 +251,25 @@ def LoanUpload(request):
                 return redirect('amfbLoanList')
             approval_officer = formset.cleaned_data['approval_officer']
             try:
-                # Asyncronously handle send mail
-                threading.Thread(target=send_async_email, args=(
-                    'DA Portal: Loan Documents Uploaded',
-                    f"""Dear {approval_officer},\n\nI have submitted some documents for approval on the DA Portal.
-                    Kindly attend to the document as it awaits your approval by searching with '{formset.cleaned_data['full_name']}'\n\nBest regards,
-                    \n{request.user.first_name} {request.user.last_name}\n{request.user.email}\nhttps://dap-alertgroup.com.ng""",
-                    request.user.email,
-                    [approval_officer.email, "creditrisk@alertgroup.com.ng"]
-                )).start()
+                sender = request.user.email
+                email_subject = 'DA Portal: Loan Documents Uploaded'
+                email_boby = f"""Dear {approval_officer},\n
+                I have submitted some documents for approval on the DA Portal.
+                Kindly attend to the document as it awaits your approval by searching with '{formset.cleaned_data['full_name']}'\n\n
+                Regards,\n
+                {request.user.first_name} {request.user.last_name}\n
+                {sender}\n
+                https://dap-alertgroup.com.ng"""
+                recipient = [approval_officer.email, "creditrisk@alertgroup.com.ng"]
+                # Asynchronously handle send mail
+                threading.Thread(target=send_async_email, args=(email_subject, email_boby, sender, recipient)).start()
+                # Save to DB
                 formset.save()
                 messages.success(request, 'Loan document uploaded successfully and awaiting approval')
                 return redirect('amfbLoanList')
-            except Exception as e:
-                messages.error(request, f"The error '{e}' occurred while processing your request. Please try again later.")
+            except (Exception, IntegrityError, ValidationError, ValueError) as e:
+                general_logger.error("An error occurred: %s", e)
+                messages.error(request, "An error occurred while processing your request. Please try again later.")
                 return render(request, 'alertmfb/loan_upload.html', {'formset': formset})
         else:
             messages.error(request, formset.errors)
@@ -254,8 +284,9 @@ def LoanDetails(request, pk):
     except LoanApplication.DoesNotExist:
         messages.error(request, "Loan documents not found.")
         return redirect('amfbLoanList')
-    except Exception as e:
-        messages.error(request, f"The error '{e}' occurred while retrieving loan document details.")
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
+        messages.error(request, "An error occurred while retrieving loan document details.")
         return redirect('amfbLoanList')
 
 
@@ -274,19 +305,24 @@ def LoanApproval(request, pk):
                 messages.error(request, "Loan document yet to be approved!")
                 return redirect('/amfb/loan/approve/'+pk)
             try:
-                # Asyncronously handle send mail
-                threading.Thread(target=send_async_email, args=(
-                    'DA Portal: Loan Approved',
-                    f"""Dear {object.upload_officer.first_name},\n\nThe submitted document for '{object}' has been approved upon review.
-                    \n\nBest regards,\n{request.user.first_name} {request.user.last_name}\n{request.user.email}\nhttps://dap-alertgroup.com.ng""",
-                    request.user.email,
-                    [object.upload_officer.email, "creditrisk@alertgroup.com.ng"]
-                )).start()
+                sender = request.user.email
+                email_subject = 'DA Portal: Loan Approved'
+                email_boby = f"""Dear {object.upload_officer.first_name},\n
+                The submitted document for '{object}' has been approved upon review.
+                Regards,\n
+                {request.user.first_name} {request.user.last_name}\n
+                {sender}\n
+                https://dap-alertgroup.com.ng"""
+                recipient = [object.upload_officer.email, "creditrisk@alertgroup.com.ng"]
+                # Asynchronously handle send mail
+                threading.Thread(target=send_async_email, args=(email_subject, email_boby, sender, recipient)).start()
+                # Save to DB
                 formset.save()
                 messages.success(request, 'Loan document successfully approved')
                 return redirect('amfbLoanList')
-            except Exception as e:
-                messages.error(request, f"The error '{e}' occurred while processing the loan document for approval")
+            except (Exception, IntegrityError, ValidationError, ValueError) as e:
+                general_logger.error("An error occurred: %s", e)
+                messages.error(request, "An error occurred while processing the loan document for approval")
                 return redirect('/amfb/loan/approve/'+pk)
         else:
             messages.error(request, formset.errors)
@@ -300,15 +336,18 @@ def LoanRejection(request, pk):
         return redirect('amfbLoanList')
     try:
         loan_application = get_object_or_404(LoanApplication, id=pk)
-        # Asyncronously handle send mail
-        threading.Thread(target=send_async_email, args=(
-            'DA Portal: Loan Rejected',
-            f"""Dear {loan_application.upload_officer.first_name},\n\nThe submitted document for '{loan_application}' has been rejected upon review.
-            Kindly contact your Credit Officer for necessary details that needs to be corrected before reuploading.\n\nBest regards,
-            \n{request.user.first_name} {request.user.last_name}\n{request.user.email}\nhttps://dap-alertgroup.com.ng""",
-            request.user.email,
-            [loan_application.upload_officer.email, "creditrisk@alertgroup.com.ng"]
-        )).start()
+        sender = request.user.email
+        email_subject = 'DA Portal: Loan Rejected'
+        email_boby = f"""Dear {loan_application.upload_officer.first_name},\n
+        The submitted document for '{loan_application}' has been rejected upon review.
+        Kindly contact your supervisor/review officer for necessary details that needs to be corrected before reuploading.
+        Regards,\n
+        {request.user.first_name} {request.user.last_name}\n
+        {sender}\n
+        https://dap-alertgroup.com.ng"""
+        recipient = [loan_application.upload_officer.email, "creditrisk@alertgroup.com.ng"]
+        # Asynchronously handle send mail
+        threading.Thread(target=send_async_email, args=(email_subject, email_boby, sender, recipient)).start()
         # Delete associated files and db record
         loan_application.loan_form.delete()
         loan_application.offer_letter.delete()
@@ -317,8 +356,12 @@ def LoanRejection(request, pk):
         loan_application.delete()
         messages.success(request, 'Loan documents rejected!')
         return redirect('amfbLoanList')
-    except Exception as e:
-        messages.error(request, f"The error '{e}' occurred while processing the loan document for rejection. Please contact support.")
+    except LoanApplication.DoesNotExist:
+        messages.error(request, "Loan documents not found.")
+        return redirect('amfbLoanList')
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
+        messages.error(request, "An error occurred while processing the loan document for rejection. Please contact support.")
         return redirect('/amfb/loan/details/'+pk)
 
 
@@ -338,6 +381,7 @@ def LoanDelete(request, pk):
         messages.success(request, 'Loan document delete successfully!')
     except LoanApplication.DoesNotExist:
         messages.error(request, 'Loan document not found')
-    except Exception as e:
-        messages.error(request, f"The error '{e}' occurred while deleting the loan document")
+    except (Exception, IntegrityError, ValidationError, ValueError) as e:
+        general_logger.error("An error occurred: %s", e)
+        messages.error(request, "An error occurred while deleting the loan document")
     return redirect('amfbLoanList')
